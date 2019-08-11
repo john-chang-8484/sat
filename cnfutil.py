@@ -5,7 +5,7 @@ from pyparsing import *
 identifier = Word(alphas+'&^|~_=<>', alphanums+'&^|~_=<>')
 expr = Forward()
 parens = Suppress(Literal('(')) + ZeroOrMore(expr) + Suppress(Literal(')'))
-expr <<= Group(parens | identifier)
+expr <<= Group(parens | identifier | pyparsing_common.integer)
 constr_op = Literal('=>') | Literal('=')
 constr = Group(expr + constr_op + expr)
 grammar = ZeroOrMore(constr | expr)
@@ -164,13 +164,18 @@ class Clauses:
             if toks[0][0] == '=>':
                 return self.or_cnf(n(self.expr_tree(toks[1])), self.expr_tree(toks[2]))
             # if builtins fail, attempt macro lookup
-            print(toks[1:])
             return self.expr_tree( self.macros[toks[0][0]](toks[1:]) )
         assert False # fail if we can't figure out this expression
 
+    def addmacro(self, macroname, macrofn):
+        """ macrofn is an arbitrary function that takes in the parsed grammar
+            in order to produce the resulting code (parsed) to evaluate
+        """
+        self.macros[macroname] = macrofn
+
     def defmacro(self, macroname, macroparams, macro):
         """ Define a macro that essentially just works like a function.
-            Customized macros can be defined using addmacro.
+            More customized macros are defined using addmacro.
         """
         def the_macro(args):
             assert len(args) == len(macroparams)
@@ -180,9 +185,5 @@ class Clauses:
             return ans
         self.addmacro(macroname, the_macro)
     
-    def addmacro(self, macroname, macrofn):
-        """ macrofn is an arbitrary function that takes in the parsed grammar
-            in order to produce the resulting code (parsed) to evaluate
-        """
-        self.macros[macroname] = macrofn
+    
 
