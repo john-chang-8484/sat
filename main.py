@@ -8,7 +8,7 @@ a = b
 c
 (| c b)
 d = (& c b)
-
+(and h g)
 """
 
 
@@ -16,6 +16,7 @@ def main():
     c = Clauses()
     
     print(prog)
+    c.defmacro('and', ['a', 'b'], '(& a b)')
     c.run(prog)
     c.print_clauses()
 

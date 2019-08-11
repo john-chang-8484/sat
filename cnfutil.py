@@ -2,7 +2,7 @@ from pyparsing import *
 
 
 # define the grammar
-identifier = Word(alphas+'&^|~', alphanums+'&^|~')
+identifier = Word(alphas+'&^|~_=<>', alphanums+'&^|~_=<>')
 expr = Forward()
 parens = Suppress(Literal('(')) + ZeroOrMore(expr) + Suppress(Literal(')'))
 expr <<= Group(parens | identifier)
@@ -20,6 +20,17 @@ def n(var):
         return '~' + var
 
 
+def replace(nlist, s, x):
+    """ recursively replace all occurrences of a string s in
+        a nested list of strings with x
+    """
+    if nlist == s:
+        return x
+    if isinstance(nlist, list):
+        return [replace(sub, s, x) for sub in nlist]
+    return nlist
+
+
 # a useful class for making clause sets
 class Clauses:
     """ A set of clauses that must all be fulfilled.
@@ -32,7 +43,14 @@ class Clauses:
     counter = 0
     def __init__(self):
         self.clauses = [] # a set of clauses
+        """ each clause is a list of variable names
+            ~ preceding a variable name means negation
+            variables can generally be arbitrary strings, except the '~' character is reserved
+        """
         self.macros = {}  # list of macros for this Clauses obj's language
+        """ a macro is stored in this dict under its name
+            macros take parsed code as input, and yield "parsed" output
+        """
     def junkvar(self):
         Clauses.counter += 1
         return 'junk~%d' % Clauses.counter
@@ -40,6 +58,7 @@ class Clauses:
         self.clauses.extend(args)
     def join(self, cls): # join with another clauses object
         self.ext(*cls.clauses)
+        self.macros.update(cls.macros)
     def get_clauses(self):
         return self.clauses + [[self.T]] # force T to be true
     def print_clauses(self):
@@ -113,9 +132,9 @@ class Clauses:
             return self.or_cnf(self.any_cnf(*vlist[0:half]), self.any_cnf(*vlist[half:]))
 
     
-    # parse a program written in wombley, update clauses accordingly
     def run(self, prog):
-        tokens = grammar.parseString(prog)
+        """ parse and run a program """
+        tokens = grammar.parseString(prog).asList()
         for stat in tokens:
             if len(stat) == 3 and isinstance(stat[1], str): # check if this is a constr
                 if stat[1] == '=':
@@ -125,10 +144,12 @@ class Clauses:
             else: # otherwise we assume it is an expression constrained to be true
                 self.l_ist(self.expr_tree(stat))
     
-    # get the result of an expression in wombley
     def expr_tree(self, toks):
-        if len(toks) == 1:
-            return toks[0]
+        """ get the result of an expression """
+        if isinstance(toks, str):
+            return toks
+        elif len(toks) == 1:
+            return self.expr_tree(toks[0])
         else:
             if toks[0][0] == '~':
                 return n(self.expr_tree(toks[1]))
@@ -138,9 +159,30 @@ class Clauses:
                 return self.any_cnf(*[self.expr_tree(i) for i in toks[1:]])
             if toks[0][0] == '^':
                 return self.xor_cnf(self.expr_tree(toks[1]), self.expr_tree(toks[2]))
+            if toks[0][0] == '=':
+                return self.xor_cnf(n(self.expr_tree(toks[1])), self.expr_tree(toks[2]))
+            if toks[0][0] == '=>':
+                return self.or_cnf(n(self.expr_tree(toks[1])), self.expr_tree(toks[2]))
             # if builtins fail, attempt macro lookup
-            print(self.macros[toks[0][0]])
+            print(toks[1:])
+            return self.expr_tree( self.macros[toks[0][0]](toks[1:]) )
         assert False # fail if we can't figure out this expression
 
-
+    def defmacro(self, macroname, macroparams, macro):
+        """ Define a macro that essentially just works like a function.
+            Customized macros can be defined using addmacro.
+        """
+        def the_macro(args):
+            assert len(args) == len(macroparams)
+            ans = expr.parseString(macro).asList()
+            for i, param in enumerate(macroparams):
+                ans = replace(ans, param, args[i]) # replace params with the actual arguments
+            return ans
+        self.addmacro(macroname, the_macro)
+    
+    def addmacro(self, macroname, macrofn):
+        """ macrofn is an arbitrary function that takes in the parsed grammar
+            in order to produce the resulting code (parsed) to evaluate
+        """
+        self.macros[macroname] = macrofn
 
