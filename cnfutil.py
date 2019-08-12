@@ -184,6 +184,14 @@ class Clauses:
                 ans = replace(ans, param, args[i]) # replace params with the actual arguments
             return ans
         self.addmacro(macroname, the_macro)
-    
-    
+
+
+def deparen(l):
+    """ strip away all layers of enclosing lists
+        this function is very useful when defining custom macros
+    """
+    if isinstance(l, list) and len(l) == 1:
+        return deparen(l[0])
+    return l
+
 

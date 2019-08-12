@@ -3,9 +3,19 @@ from cnfutil import n, Clauses, deparen
 from field_util import at, import_field_macros_to, set_dw
 
 
-width = 14
-duration = 21
+""" find cyclic solutions for the rule 110 CA
+cool values for (duration, width):
+    (21, 14)
+    (12, 14)
+    (11, 21)
+    (8, 8)
+"""
+
+
+duration = 13
+width = 20
 set_dw(duration, width) # set the duration and width in field_util
+
 
 def main():
     c = Clauses()
