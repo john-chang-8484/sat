@@ -56,6 +56,19 @@ def num(c, args):
     return c.variables[deparen(args[0])]
 
 
+def addnums(c, args):
+    num_a = c.expr_tree(args[0])[1:] # assume these are lists
+    num_b = c.expr_tree(args[1])[1:] # assume these are lists
+    ans = ['list', ['^', num_a[0], num_b[0]]]
+    carries = [c.junkvar()]
+    c.l_iff(carries[0], c.expr_tree(['&', num_a[0], num_b[0]]))
+    for i in range(1, len(num_a)):
+        ans.append(['add_o', num_a[i], num_b[i], carries[-1]])
+        carries.append(c.junkvar())
+        c.l_iff(carries[-1], c.expr_tree(['add_c', num_a[i], num_b[i], carries[-2]]))
+    return ans
+
+
 def main():
     c = Clauses()
     
@@ -64,19 +77,25 @@ def main():
     c.addmacro('l=', list_eq)
     c.addmacro('defnum', defnum)
     c.addmacro('num', num)
+    c.defmacro('add_o', ['a', 'b', 'c'], '(^ c (^ a b))') # full 1 bit adder output
+    c.defmacro('add_c', ['a', 'b', 'c'], '(| (& a b) (& c (| a b)))') # full 1 bit adder carry
+    c.addmacro('+', addnums)
     
     #import_field_macros_to(c)
     c.addmacro('data1', def_rom([[1, 0, 0, 0], [0, 2, 0, 0], [1, 1, 0, 0], [0, 0, 1, 0]]))
-    print('!!!')
-    c.run('(l= (list x0 x1) (defnum x 2))')
-    print('!!!')
-    c.run('x0 = 1')
-    c.run('x1 = 1')
-    c.run('(l= (list a b c d) (data1 (num x))))')
     
     ###### End of Macro Definitions ######
     
     ############ Constraints #############
+    #c.run('(l= (list x0 x1) (defnum x 2))')
+    #c.run('x0 = 1')
+    #c.run('x1 = 1')
+    #c.run('(l= (list a b c d) (data1 (num x))))')
+    c.run('(l= (list x0 x1 x2) (defnum x 3))')
+    c.run('(l= (list x0 x1 x2) (list 1 0 0))')
+    c.run('(l= (list z0 z1 z2) (defnum z 3))')
+    c.run('(l= (list z0 z1 z2) (list 1 1 0))')
+    c.run('(l= (list a0 a1 a2) (+ (num x) (num z)))')
     
 
     solution = solve(c.get_clauses())
@@ -85,7 +104,8 @@ def main():
     else:
         print('SAT')
         for k in solution:
-            print(k, solution[k])
+            if '~' not in k:
+                print(k, solution[k])
     
 
 if __name__ == '__main__':

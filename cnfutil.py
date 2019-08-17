@@ -2,7 +2,7 @@ from pyparsing import *
 
 
 # define the grammar
-identifier = Word(alphas+'&^|~_=<>', alphanums+'&^|~_=<>')
+identifier = Word(alphas+'&^|~_=<>+-', alphanums+'&^|~_=<>+-')
 expr = Forward()
 parens = Suppress(Literal('(')) + ZeroOrMore(expr) + Suppress(Literal(')'))
 expr <<= Group(parens | identifier | pyparsing_common.integer)
