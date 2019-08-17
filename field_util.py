@@ -58,11 +58,11 @@ def import_field_macros_to(c):
     """ defines several field macros in the Clauses object c
         note: causes '_' to become a reserved character in variable names
     """
-    def mac_at(args):
+    def mac_at(c, args):
         return at(deparen(args[0]), deparen(args[1]), deparen(args[2]))
     c.addmacro('at', mac_at)
     
-    def forall(args):
+    def forall(c, args):
         assert len(args) == 1
         ans = ['&']
         for t in range(0, duration):
@@ -71,10 +71,10 @@ def import_field_macros_to(c):
         return ans
     c.addmacro('forall', forall)
     
-    c.addmacro('forward', (lambda args: forward(args[0][0])))
-    c.addmacro('back', (lambda args: back(args[0][0])))
-    c.addmacro('left', (lambda args: left(args[0][0])))
-    c.addmacro('right', (lambda args: right(args[0][0])))
+    c.addmacro('forward', (lambda c, args: forward(args[0][0])))
+    c.addmacro('back', (lambda c, args: back(args[0][0])))
+    c.addmacro('left', (lambda c, args: left(args[0][0])))
+    c.addmacro('right', (lambda c, args: right(args[0][0])))
 
 
 def set_dw(d, w):

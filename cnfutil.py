@@ -31,6 +31,15 @@ def replace(nlist, s, x):
     return nlist
 
 
+def deparen(l):
+    """ strip away all layers of enclosing lists
+        this function is very useful when defining custom macros
+    """
+    if isinstance(l, list) and len(l) == 1:
+        return deparen(l[0])
+    return l
+
+
 # a useful class for making clause sets
 class Clauses:
     """ A set of clauses that must all be fulfilled.
@@ -47,10 +56,11 @@ class Clauses:
             ~ preceding a variable name means negation
             variables can generally be arbitrary strings, except the '~' character is reserved
         """
-        self.macros = {}  # list of macros for this Clauses obj's language
+        self.macros = {}  # dict of macros for this Clauses obj's language
         """ a macro is stored in this dict under its name
             macros take parsed code as input, and yield "parsed" output
         """
+        self.variables = {} # variables defined by various macros
     def junkvar(self):
         Clauses.counter += 1
         return 'junk~%d' % Clauses.counter
@@ -148,23 +158,29 @@ class Clauses:
         """ get the result of an expression """
         if isinstance(toks, str):
             return toks
+        elif isinstance(toks, int):
+            return self.T if toks else self.F
         elif len(toks) == 1:
             return self.expr_tree(toks[0])
         else:
-            if toks[0][0] == '~':
+            whichfn = self.expr_tree(toks[0])
+            if whichfn == '~':
                 return n(self.expr_tree(toks[1]))
-            if toks[0][0] == '&':
+            if whichfn == '&':
                 return self.all_cnf(*[self.expr_tree(i) for i in toks[1:]])
-            if toks[0][0] == '|':
+            if whichfn == '|':
                 return self.any_cnf(*[self.expr_tree(i) for i in toks[1:]])
-            if toks[0][0] == '^':
+            if whichfn == '^':
                 return self.xor_cnf(self.expr_tree(toks[1]), self.expr_tree(toks[2]))
-            if toks[0][0] == '=':
+            if whichfn == '=':
                 return self.xor_cnf(n(self.expr_tree(toks[1])), self.expr_tree(toks[2]))
-            if toks[0][0] == '=>':
+            if whichfn == '=>':
                 return self.or_cnf(n(self.expr_tree(toks[1])), self.expr_tree(toks[2]))
+            if whichfn == 'list':
+                return ['list', *[self.expr_tree(i) for i in toks[1:]]]
             # if builtins fail, attempt macro lookup
-            return self.expr_tree( self.macros[toks[0][0]](toks[1:]) )
+            print(toks)
+            return self.expr_tree( self.macros[whichfn](self, toks[1:]) )
         assert False # fail if we can't figure out this expression
 
     def addmacro(self, macroname, macrofn):
@@ -177,21 +193,12 @@ class Clauses:
         """ Define a macro that essentially just works like a function.
             More customized macros are defined using addmacro.
         """
-        def the_macro(args):
+        def the_macro(c, args):
             assert len(args) == len(macroparams)
             ans = expr.parseString(macro).asList()
             for i, param in enumerate(macroparams):
                 ans = replace(ans, param, args[i]) # replace params with the actual arguments
             return ans
         self.addmacro(macroname, the_macro)
-
-
-def deparen(l):
-    """ strip away all layers of enclosing lists
-        this function is very useful when defining custom macros
-    """
-    if isinstance(l, list) and len(l) == 1:
-        return deparen(l[0])
-    return l
 
 
