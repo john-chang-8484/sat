@@ -179,7 +179,6 @@ class Clauses:
             if whichfn == 'list':
                 return ['list', *[self.expr_tree(i) for i in toks[1:]]]
             # if builtins fail, attempt macro lookup
-            print(toks)
             return self.expr_tree( self.macros[whichfn](self, toks[1:]) )
         assert False # fail if we can't figure out this expression
 

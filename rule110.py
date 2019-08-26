@@ -30,8 +30,8 @@ squares:
 """
 
 
-duration = 30
-width = 30
+duration = 22
+width = 22
 set_dw(duration, width) # set the duration and width in field_util
 
 
