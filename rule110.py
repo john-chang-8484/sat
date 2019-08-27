@@ -1,6 +1,6 @@
 from makecnf import makecnf, parse_result, solve
 from cnfutil import n, Clauses, deparen
-from field_util import at, import_field_macros_to, set_dw
+from field_util import at, import_field_macros_to, set_dims
 
 
 """ find cyclic solutions for the rule 110 CA
@@ -30,9 +30,9 @@ squares:
 """
 
 
-duration = 22
-width = 22
-set_dw(duration, width) # set the duration and width in field_util
+duration = 10
+width = 10
+set_dims((duration, width)) # set the duration and width in field_util
 
 
 def main():
@@ -59,7 +59,7 @@ def main():
         for t in range(0, duration):
             line = '| '
             for x in range(0, width):
-                line += '# ' if solution[at('cell', t, x)] else '  '
+                line += '# ' if solution[at('cell', (t, x))] else '  '
             print(line + '|')
     
 

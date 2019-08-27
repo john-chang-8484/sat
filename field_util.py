@@ -1,4 +1,5 @@
 from cnfutil import n, Clauses, deparen
+from itertools import product
 
 """ fields are defined by analogy with fields in physics:
         - they take on a value in every point in space
@@ -6,16 +7,18 @@ from cnfutil import n, Clauses, deparen
     here are some useful functions for working with them
 """
 
-width = 1
-duration = 1
+dims = [1, 1] # width, duration
 
 
+def suffix(pos):
+    return ''.join(['_%d' % (pos[i] % dims[i]) for i in range(0, len(dims))])
 
-def at(v, t, x):
+
+def at(v, pos):
     """ value of a field at some location in space """
-    return v + '_%d_%d' % (t % duration, x % width)
+    return v + suffix(pos)
 
-def pos(v):
+def ps(v):
     """ get the position in space of some field variable """
     return tuple(map(int, v.split('_')[1:]))
 
@@ -25,23 +28,23 @@ def nm(v):
 
 def right(v):
     """ returns the field variable just right of v """
-    name, (t, x) = nm(v), pos(v)
-    return at(name, t, x + 1)
+    name, (t, x) = nm(v), ps(v)[0:2]
+    return at(name, (t, x + 1) + ps(v)[2:])
 
 def left(v):
     """ returns the field variable just left of v """
-    name, (t, x) = nm(v), pos(v)
-    return at(name, t, x - 1)
+    name, (t, x) = nm(v), ps(v)[0:2]
+    return at(name, (t, x - 1) + ps(v)[2:])
 
 def forward(v):
     """ returns the field variable just futurewards of v """
-    name, (t, x) = nm(v), pos(v)
-    return at(name, t + 1, x )
+    name, t = nm(v), ps(v)[0]
+    return at(name, (t + 1,) + ps(v)[1:])
 
 def back(v):
     """ returns the field variable just pastwards of v """
-    name, (t, x) = nm(v), pos(v)
-    return at(name, t - 1, x )
+    name, t = nm(v), ps(v)[0]
+    return at(name, (t - 1,) + ps(v)[1:])
 
 def indexify(nlist, ind):
     """ put indices on all variables with trailing underscores
@@ -51,7 +54,7 @@ def indexify(nlist, ind):
     if isinstance(nlist, list):
         return [indexify(sub, ind) for sub in nlist]
     if isinstance(nlist, str) and nlist[-1] == '_':
-        return nlist + ind
+        return nlist[:-1] + ind
     return nlist
 
 def import_field_macros_to(c):
@@ -59,15 +62,14 @@ def import_field_macros_to(c):
         note: causes '_' to become a reserved character in variable names
     """
     def mac_at(c, args):
-        return at(deparen(args[0]), deparen(args[1]), deparen(args[2]))
+        return at(deparen(args[0]), [deparen(arg) for arg in args[1:]])
     c.addmacro('at', mac_at)
     
     def forall(c, args):
         assert len(args) == 1
         ans = ['&']
-        for t in range(0, duration):
-            for x in range(0, width):
-                ans.append(indexify(args[0], '%d_%d' % (t, x)))
+        for pos in product(*[range(dim) for dim in dims]):
+            ans.append(indexify(args[0], suffix(pos)))
         return ans
     c.addmacro('forall', forall)
     
@@ -77,11 +79,10 @@ def import_field_macros_to(c):
     c.addmacro('right', (lambda c, args: right(args[0][0])))
 
 
-def set_dw(d, w):
+def set_dims(dimensions):
     """ allows client program to set the desired duration and width """
-    global duration
-    global width
-    duration, width = d, w
+    global dims
+    dims = dimensions
 
 
 
