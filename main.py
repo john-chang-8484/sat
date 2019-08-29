@@ -1,12 +1,12 @@
 from makecnf import makecnf, parse_result, solve
 from cnfutil import n, Clauses, deparen
-from field_util import at, import_field_macros_to, set_dw
+from field_util import at, import_field_macros_to, set_dims
 from numbers import import_number_macros_to, def_rom
 
 
 width = 14
 duration = 21
-set_dw(duration, width) # set the duration and width in field_util
+set_dims((duration, width)) # set the duration and width in field_util
 
 
 def main():
