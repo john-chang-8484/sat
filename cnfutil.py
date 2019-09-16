@@ -196,7 +196,7 @@ class Clauses:
             assert len(args) == len(macroparams)
             ans = expr.parseString(macro).asList()
             for i, param in enumerate(macroparams):
-                ans = replace(ans, param, args[i]) # replace params with the actual arguments
+                ans = replace(ans, param, self.expr_tree(args[i])) # replace params with evaluations of the actual arguments
             return ans
         self.addmacro(macroname, the_macro)
 
