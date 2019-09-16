@@ -2,6 +2,7 @@ from makecnf import makecnf, parse_result, solve
 from cnfutil import n, Clauses, deparen
 from field_util import at, import_field_macros_to, set_dims
 from numbers import import_number_macros_to, def_rom
+from genutil import import_genutil_to
 
 
 width = 4
@@ -19,7 +20,8 @@ def main():
 
     import_number_macros_to(c)
     import_field_macros_to(c)
-    c.addmacro('data1', def_rom([[1, 0, 0, 0], [0, 1, 0, 0], [1, 1, 0, 0], [0, 0, 1, 0], [1, 1, 1, 1], [0, 0, 0, 0], [1, 1, 1, 0], [0, 1, 1, 1]]))
+    import_genutil_to(c)
+    c.addmacro('instructions', def_rom([]))
     
     # define a macro to convert 2 bits to a space direction
     c.defmacro('sdir', ['cell', 'd1', 'd2'],
@@ -43,8 +45,11 @@ def main():
         '       (= d2_ (sdir (forward d2_) d1_ d2_))'
         ')))')
     
-    c.run('isplasma_0_0_0')
     
+    c.run('(forall (| 1 (l= (list 0 0) (defnum pc_ 2))))')
+    #c.run('(forall (=> iszomb))')
+    
+    c.run('isplasma_0_0_0')
 
     solution = solve(c.get_clauses())
     if not solution:

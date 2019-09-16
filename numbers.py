@@ -72,8 +72,15 @@ def addnums(c, args):
     return ans
 
 
+def index(c, args):
+    lst = c.expr_tree(args[0])
+    i = deparen(args[1])
+    return lst[i]
+
+
 def import_number_macros_to(c):
     c.addmacro('l=', list_eq)
+    c.addmacro('<>', index)
     c.addmacro('defnum', defnum)
     c.addmacro('cnum', cnum)
     c.addmacro('num', num)

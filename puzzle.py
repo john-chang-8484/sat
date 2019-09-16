@@ -1,6 +1,7 @@
 from makecnf import makecnf, parse_result, solve
 from cnfutil import n, Clauses, deparen
 from numbers import import_number_macros_to, def_rom
+from genutil import import_genutil_to
 
 
 tile_data = [ #0                   #1                   #2
@@ -22,17 +23,7 @@ for i in range(9):
     tiles.append(tile)
 
 
-def exactly_one(c, args):
-    params = [deparen(arg) for arg in args]
-    if len(params) == 0:
-        return c.F
-    if len(params) == 1:
-        return params[0]
-    else:
-        hlf = len(params) // 2
-        return ['|',
-            ['&', ['e1', *params[:hlf]], ['~', ['|', *params[hlf:]]]],
-            ['&', ['e1', *params[hlf:]], ['~', ['|', *params[:hlf]]]] ]
+
 
 
 def main():
@@ -41,7 +32,8 @@ def main():
     ######### Macro Definitions ##########
 
     import_number_macros_to(c)
-    c.addmacro('e1', exactly_one)
+    import_genutil_to(c)
+    
     
     ###### End of Macro Definitions ######
     
