@@ -23,9 +23,6 @@ for i in range(9):
     tiles.append(tile)
 
 
-
-
-
 def main():
     c = Clauses()
     

@@ -21,7 +21,9 @@ def main():
     import_number_macros_to(c)
     import_field_macros_to(c)
     import_genutil_to(c)
-    c.addmacro('instructions', def_rom([]))
+    
+    c.addmacro('instrs', def_rom([[0,0,0], [1,0,1], [0,1,0], [1,1,1]]))
+    
     
     # define a macro to convert 2 bits to a space direction
     c.defmacro('sdir', ['cell', 'd1', 'd2'],
@@ -31,11 +33,25 @@ def main():
         '   (&    d1     d2  (down  cell)))' )
     
     # define a macro to convert 1 bit to a time direction
-    c.defmacro('tdir', ['cell', 'd1'],
-        '(| (& (~ d1) (back    cell))'
-        '   (&    d1  (forward cell)))')
+    c.defmacro('tdir', ['cell', 'd0'],
+        '(| (& (~ d0) (back    cell))'
+        '   (&    d0  (forward cell)))')
+    
+    # define a macro to convert 3 bits to a spacetime direction
+    c.defmacro('stdir', ['cell', 'd0', 'd1', 'd2'],
+        '(| (& (~ d0) (~ d1) (~ d2) (back    (right cell)))'
+        '   (& (~ d0) (~ d1)    d2  (back    (up    cell)))'
+        '   (& (~ d0)    d1  (~ d2) (back    (left  cell)))'
+        '   (& (~ d0)    d1     d2  (back    (down  cell)))'
+        '   (&    d1  (~ d1) (~ d2) (forward (right cell)))'
+        '   (&    d1  (~ d1)    d2  (forward (up    cell)))'
+        '   (&    d1     d1  (~ d2) (forward (left  cell)))'
+        '   (&    d1     d1     d2  (forward (down  cell))))' )
     
     ###### End of Macro Definitions ######
+    
+    # define constants:
+    c.run('(cnum one 2 1)')
     
     ############ Constraints #############
     
@@ -46,10 +62,15 @@ def main():
         ')))')
     
     
-    c.run('(forall (| 1 (l= (list 0 0) (defnum pc_ 2))))')
-    #c.run('(forall (=> iszomb))')
-    
+    c.run('(forall (truth (defnum pc_ 2)))')
+    c.run('(forall (=> iszomb (|'
+        '   (& (<> (instrs (num pc_)) 0)' # no reverse
+        '      (l= (+ (num pc_) (num one)) (stdir pc_ d0_ (<> (instrs (num pc_)) 1) (<> (instrs (num pc_)) 2)) )'
+        ')))')
+    #c.run('(l= (num pc_0_0_0) (list number0 number1))')
     c.run('isplasma_0_0_0')
+
+    ######### End of Constraints #########
 
     solution = solve(c.get_clauses())
     if not solution:

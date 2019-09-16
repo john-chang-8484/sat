@@ -14,6 +14,13 @@ def exactly_one(c, args):
             ['&', ['e1', *params[hlf:]], ['~', ['|', *params[:hlf]]]] ]
 
 
+def truth(c, args):
+    for arg in args:
+        c.expr_tree(arg)
+    return c.T
+
+
 def import_genutil_to(c):
     c.addmacro('e1', exactly_one)
+    c.addmacro('truth', truth)
 

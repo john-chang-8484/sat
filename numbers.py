@@ -46,7 +46,7 @@ def defnum(c, args):
 
 
 def cnum(c, args):
-    """ usage: (defnum, <name>, <number of bits>, <value>)
+    """ usage: (cnum, <name>, <number of bits>, <value>)
         defines a constant number
     """
     name, nbits, val = deparen(args[0]), deparen(args[1]), deparen(args[2])
@@ -75,12 +75,19 @@ def addnums(c, args):
 def index(c, args):
     lst = c.expr_tree(args[0])
     i = deparen(args[1])
-    return lst[i]
+    return lst[i + 1]
+
+def slice_macro(c, args):
+    lst = c.expr_tree(args[0])
+    i = deparen(args[1])
+    j = deparen(args[2])
+    return lst[i+1:j+1]
 
 
 def import_number_macros_to(c):
     c.addmacro('l=', list_eq)
     c.addmacro('<>', index)
+    c.addmacro('<->', slice_macro)
     c.addmacro('defnum', defnum)
     c.addmacro('cnum', cnum)
     c.addmacro('num', num)
